@@ -16,11 +16,14 @@ from gym import spaces
 device = torch.device("cpu")  # "cuda:0" if torch.cuda.is_available() else
 fl = torch.cuda.FloatTensor
 class chest_env(gym.Env):
-    def __init__(self, number_of_actions=256, grid_size=128):
+    def __init__(self, number_of_actions=256, grid_size=128, normalize=True, return_distance=True, use_tensor=True):
         """
         :param distance: Should be the distance between the player and the coin
         """
         super(chest_env, self).__init__()
+        self.normalize = normalize
+        self.return_distance = return_distance
+        self.use_tensor = use_tensor
         self.grid_size = torch.tensor((grid_size, grid_size), dtype=torch.int, device=device)  # change this to set the size of the environment
         self.action_space = spaces.Tuple((spaces.Discrete(3), spaces.Discrete(3)))  # Four discrete actions: up, down, left, right
         self.observation_space = spaces.Tuple((spaces.Discrete(grid_size), spaces.Discrete(grid_size)))  # State space: (x, y)
@@ -28,6 +31,7 @@ class chest_env(gym.Env):
         self.coin_position = None
         self.number_of_actions = torch.tensor((number_of_actions), dtype=torch.int, device=device)
         self.action_number = torch.tensor((0), dtype=torch.int, device=device)
+
 
     def reset(self):
         pl_x = torch.randint(0, self.grid_size[0], size=(1, 1), dtype=torch.int, device=device).flatten()
@@ -40,13 +44,36 @@ class chest_env(gym.Env):
         self.has_coin = torch.tensor((False), dtype=torch.bool, device=device)
         self.action_number = 0
 
-        self.player_return = self.normalize(self.player_position)
-        self.coin_return = self.normalize(self.coin_position)
-        self.chest_return = self.normalize(self.chest_position)
-        observation = torch.concat((self.player_return, self.coin_return, self.chest_return,
-                                    self.coin_return - self.player_return, self.chest_return - self.player_return)).double()
+        observation = self.return_observation()
         return observation
 
+    def return_observation(self):
+        if self.normalize:
+            self.player_return = self.normalize(self.player_position)
+            self.coin_return = self.normalize(self.coin_position)
+            self.chest_return = self.normalize(self.chest_position)
+        else:
+            self.player_return = self.player_position
+            self.coin_return = self.coin_position
+            self.chest_return = self.chest_position
+
+
+        if self.return_distance:
+            observation = torch.concat((self.player_return, self.coin_return, self.chest_return,
+                                        self.coin_return - self.player_return,
+                                        self.chest_return - self.player_return)).double()
+        else:
+            observation = torch.concat((self.player_return, self.coin_return, self.chest_return)).double()
+
+        if not self.use_tensor:
+            observation = observation.numpy()
+
+            if not self.normalize:
+                observation = observation.astype(int)
+
+            observation = tuple(observation)
+
+        return observation
 
     def dist(self, x, y):
         """
@@ -103,12 +130,7 @@ class chest_env(gym.Env):
             reward = torch.tensor((0), dtype=torch.float32, device=device)
             done = torch.tensor((True), dtype=torch.bool, device=device)
 
-
-        self.player_return = self.normalize(self.player_position)
-        self.coin_return = self.normalize(self.coin_position)
-        self.chest_return = self.normalize(self.chest_position)
-        observation = torch.concat((self.player_return, self.coin_return, self.chest_return,
-                                    self.coin_return - self.player_return, self.chest_return - self.player_return)).double()
+        observation = self.return_observation()
         return observation, reward, done, {}
 
     def render(self):
@@ -116,21 +138,72 @@ class chest_env(gym.Env):
         pass
 
     def sample(self):
+
         sampled_action = torch.randint(0, 3, size=(2, 1), dtype=torch.int, device=device)
+
+        if not self.use_tensor:
+            sampled_action = sampled_action.numpy()
+            sampled_action = tuple(sampled_action.flatten())
+
         return sampled_action
 
     def normalize(self, x: list):
         return x/self.grid_size
-
-    def sample(self):
-        sampled_action = torch.randint(0, 3, size=(2, 1), dtype=torch.int, device=device)
-        return sampled_action
 
     def _place_item(self):
         x = torch.randint(0, self.grid_size[0], size=(1, 1), dtype=torch.int, device=device).flatten()
         y = torch.randint(0, self.grid_size[1], size=(1, 1), dtype=torch.int, device=device).flatten()
 
         return torch.concat((x, y))
+
+    def iter_all_states(self):
+        """
+        This function will return an iterator, that can loop over all the states for this game :).
+        This is usefull for the implementation of the value-iteration algorithm.
+        :return: iterator
+        """
+
+
+        def it_states(grid_size, device=device, use_tensor=True):
+            for x in range(grid_size[0]):
+                for y in range(grid_size[1]):
+                    for x2 in range(grid_size[0]):
+                        for y2 in range(grid_size[1]):
+                            for x3 in range(grid_size[0]):
+                                for y3 in range(grid_size[1]):
+
+                                    if use_tensor:
+                                        yield torch.tensor((x, y, x2, y2, x3, y3), dtype=torch.int, device=device)
+                                    else:
+                                        yield (x, y, x2, y2, x3, y3)
+
+        it = it_states(grid_size=self.grid_size, device=device, use_tensor=self.use_tensor)
+
+        return it
+
+    def iter_all_actions(self):
+        """
+        This function will return an iterator, that can loop over all the states for this game :).
+        This is usefull for the implementation of the value-iteration algorithm.
+
+        :return: iterator
+        """
+
+        def it_actions(device=device, use_tensor=True):
+            for x in range(3):
+                for y in range(3):
+                    if use_tensor:
+                        yield torch.tensor((x, y), dtype=torch.int, device=device)
+                    else:
+                        yield (x, y)
+
+        it = it_actions(device=device, use_tensor=self.use_tensor)
+        return it
+
+
+
+
+
 
 if __name__ == '__main__':
     gym.register(id='chest_env-v0', entry_point='chest_env:chest_env')
