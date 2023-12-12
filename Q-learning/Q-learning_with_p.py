@@ -20,10 +20,12 @@ import os
 
 
 """
-This implementation of the Q-learning algorithm estimate the Q-values using the algorithm:
+This implementation of the Q-learning algorithm estimate the probabilites: p(y |x, a) directly.
+This means that the Q-update step looks alto more like the value iteration update with;
 
-Q_n+1(x, a) = (1 - alpha_n) * Q_n(x, a) + alpha_n * (r(x, a) + lambda * max_a(Q_n(y, a)))
+Q = reward + lambda * sum_y max_a(Q(y, a)) * p(y|x, a)
 """
+
 
 class Agent:
     def __init__(self, env):
@@ -32,15 +34,6 @@ class Agent:
         self.rewards = collections.defaultdict(float)
         self.transits = collections.defaultdict(collections.Counter)
         self.q_values = collections.defaultdict(float)  # table with Q-values
-
-        it = self.sqd()
-        self.alpha = lambda: next(it)  # get the next alpha value in the sequence
-
-    def sqd(self, lr=1.0):
-        i = 1
-        while True:
-            yield lr / (i + 1)
-            i += 1
 
     def play_n_random_steps(self, count):
         for _ in range(count):
@@ -82,19 +75,12 @@ class Agent:
                 action_value = 0.0
                 target_counts = self.transits[(state, action)]  # get the amount of transits for this state and action
                 total = sum(target_counts.values())  # C_1 + ... + C_n
-
-                for tgt_state, count in target_counts.items():  # This is Y_n+1(x,a), how often it has happend
+                for tgt_state, count in target_counts.items():  # For every target state we can end up in and the times we have done so
                     key = (state, action, tgt_state)  # get key
                     reward = self.rewards[key]  # get rewards for going from state to tgt_state using action
-                    best_action = self.select_action(tgt_state)  # select the best action to take also known as "b"
-                    q_val = self.q_values[(tgt_state, best_action)]  # get the Q-value for the best action
-
-                    action_value = count/total * (reward + LAMBDA * q_val)  # action_value = p(y|x, a) * (r(x, a) + lambda * max_a(Q(Y_n+1, a)))
-
-                alp = self.alpha()  # get the alpha value for this iteration
-                q_now = self.q_values[(state, action)]
-                action_value = (1 - alp) * q_now + alp * action_value
-
+                    best_action = self.select_action(tgt_state)  # select the best action to take
+                    val = reward + LAMBDA * self.q_values[(tgt_state, best_action)]  # val = r(x, a) + lambda * max_a(Q(Y_n+1, a))
+                    action_value += (count / total) * val  # action_value = p(y|x, a) * val
                 self.q_values[(state, action)] = action_value  # update the values table using r(x, a) + lambda * sum_y p(y|x, a) * V^n(y)
 
     def eval_play_game(self, env: gym.envs) -> float:
