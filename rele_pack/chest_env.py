@@ -114,7 +114,12 @@ class chest_env(gym.Env):
         self.action_number += 1
 
         # Check if the player has collected the coin
-        if torch.eq(self.player_position, self.coin_position).all() and not self.has_coin:
+        if torch.eq(self.player_position, self.coin_position).all() and torch.eq(self.player_position, self.chest_position).all() and not self.has_coin:
+            # special case if we spawn on the chest with the coin
+            reward = torch.tensor((1), dtype=torch.float32, device=device)
+            self.has_coin = torch.tensor((True), dtype=torch.bool, device=device)
+            done = torch.tensor((True), dtype=torch.bool, device=device)
+        elif torch.eq(self.player_position, self.coin_position).all() and not self.has_coin:
             reward = torch.tensor((0.5), dtype=torch.float32, device=device)  # Provide a positive reward for collecting the coin
             self.has_coin = torch.tensor((True), dtype=torch.bool, device=device)
             done = torch.tensor((False), dtype=torch.bool, device=device)
