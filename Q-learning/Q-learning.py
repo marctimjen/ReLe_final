@@ -39,22 +39,25 @@ class Agent:
     def sqd(self, lr=1.0):
         i = 1
         while True:
-            yield lr / (i + 1)
+            yield lr / (i*0.01 + 1)
             i += 1
 
-    def play_n_random_steps(self, count):
-        for _ in range(count):
-            action = self.env.sample()  # takes random action
-            new_state, reward, is_done, _ = self.env.step(action)  # get reward, and new_state
-            self.rewards[(self.state, action, new_state)] = reward  # insert in reward table
-            self.transits[(self.state, action)][new_state] += 1  # increment with 1 in the transaction table
-            self.state = self.env.reset() if is_done else new_state  # reset or run from current state
+    # def play_n_random_steps(self, count):
+    #     for _ in range(count):
+    #         action = self.env.sample()  # takes random action
+    #         new_state, reward, is_done, _ = self.env.step(action)  # get reward, and new_state
+    #         self.rewards[(self.state, action, new_state)] = reward  # insert in reward table
+    #         self.transits[(self.state, action)][new_state] += 1  # increment with 1 in the transaction table
+    #         self.state = self.env.reset() if is_done else new_state  # reset or run from current state
 
-    def select_action(self, state):
+    def select_action(self, state, epsi: float = 0.0):
         """
         Based on the state that we are in select the best action (the one with best value).
         """
         best_action, best_value = None, None
+
+        if torch.rand(1) < epsi:  # at random times take a random action instead of the best action
+            return self.env.sample()
 
         gen_all_actions = self.env.iter_all_actions()  # get all the actions
 
@@ -63,39 +66,36 @@ class Agent:
             if best_value is None or best_value < action_value:  # get the best action
                 best_value = action_value
                 best_action = action
+
         return best_action
 
-    def q_learn(self):
+    def q_learn(self, nr_episodes: int, epsi: float):
         """
         Here we iterate over all states and actions and calculate the max state value. With this we can fill the values
         table.
 
         :return: None
         """
-        gen_all_states = self.env.iter_all_states()  # get all the states
-        gen_all_states = iter(gen_all_states)
 
-        for state in gen_all_states:  # for every state in the game
-            gen_all_actions = self.env.iter_all_actions()  # get all the actions
-            gen_all_actions = iter(gen_all_actions)
-            for action in gen_all_actions:
-                action_value = 0.0
-                target_counts = self.transits[(state, action)]  # get the amount of transits for this state and action
-                total = sum(target_counts.values())  # C_1 + ... + C_n
+        is_done = False
+        self.alp = self.alpha()  # get the alpha value for this iteration
+        for _ in range(nr_episodes):
+            while not is_done:
+                action = self.select_action(self.state, epsi=epsi)  # get the best action
+                new_state, reward, is_done, _ = self.env.step(action)  # take the action in the env
+                self.rewards[(self.state, action, new_state)] = reward  # insert in reward table
+                self.transits[(self.state, action)][new_state] += 1  # increment with 1 in the transaction table
 
-                for tgt_state, count in target_counts.items():  # This is Y_n+1(x,a), how often it has happend
-                    key = (state, action, tgt_state)  # get key
-                    reward = self.rewards[key]  # get rewards for going from state to tgt_state using action
-                    best_action = self.select_action(tgt_state)  # select the best action to take also known as "b"
-                    q_val = self.q_values[(tgt_state, best_action)]  # get the Q-value for the best action
+                q_now = self.q_values[(self.state, action)]
+                best_action = self.select_action(new_state)  # take the best action for the next state
+                q_tar = self.q_values[(new_state, best_action)]
 
-                    action_value = count/total * (reward + LAMBDA * q_val)  # action_value = p(y|x, a) * (r(x, a) + lambda * max_a(Q(Y_n+1, a)))
+                action_value = (reward + LAMBDA * q_tar - q_now)  # (r(x, a) + lambda * max_b(Q_n(Y_n+1(x,a), b)) - Q_n(x, a))
+                action_value = q_now + self.alp * action_value  # Q_n(x, a) + action_value
 
-                alp = self.alpha()  # get the alpha value for this iteration
-                q_now = self.q_values[(state, action)]
-                action_value = (1 - alp) * q_now + alp * action_value
-
-                self.q_values[(state, action)] = action_value  # update the values table using r(x, a) + lambda * sum_y p(y|x, a) * V^n(y)
+                self.q_values[(self.state, action)] = action_value
+                self.state = self.env.reset() if is_done else new_state  # reset or run from current state
+            is_done = False
 
     def eval_play_game(self, env: gym.envs) -> float:
         """
@@ -130,7 +130,8 @@ if __name__ == "__main__":
     run["Algo"] = "Q-learning"
 
     params = {"number_of_actions": 20,
-              "grid_size": 3,
+              "grid_size": 4,
+              "epsilon": 0.2,
               "lambda": 0.9,
               "test_episodes": 20,
               "amount_of_eval_rounds": 100}
@@ -149,8 +150,10 @@ if __name__ == "__main__":
     best_reward = 0.0
     while True:
         iter_no += 1
-        agent.play_n_random_steps(300)  # fill in the transit and rewards tables
-        agent.q_learn()  # fill in the values table - the future payments
+        # agent.play_n_random_steps(300)  # fill in the transit and rewards tables
+        agent.q_learn(nr_episodes=30, epsi=params["epsilon"])  # fill in the values table - the future payments
+
+        run["alpha"].log(agent.alp)
 
         reward = 0.0
         for _ in range(TEST_EPISODES):  # test the policy now for TEST_EPISODES games
@@ -170,6 +173,6 @@ if __name__ == "__main__":
             run["agent/transits_size"].log(len(agent.transits))
             run["agent/values_size"].log(len(agent.q_values))
             run.stop()
-            breakpoint()
+            # breakpoint()
             print("Solved in %d iterations!" % iter_no)
             break
