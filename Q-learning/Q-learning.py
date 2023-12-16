@@ -8,21 +8,21 @@ import torch
 import neptune
 import os
 
-# 0: (0, 0) # stand still
-# 1: (0, 1) # 1 down
-# 2: (1, 0) # 1 right
-# 3: (1, 1) # 1 right and 1 down
-# 4: (0, -1) # 1 up
-# 5: (-1, 0) # 1 left
-# 6: (-1, -1) # 1 left and 1 up
-# 7: (-1, 1) # 1 left and 1 down
-# 8: (1, -1) # 1 right and 1 up
+# 0: (0, 0) # Move up and left
+# 1: (0, 1) # Move up
+# 2: (1, 0) # Move left
+# 3: (1, 1) # stand still
+# 4: (0, 2) # Move up and right
+# 5: (2, 0) # Move down and left
+# 6: (1, 2) # Move right
+# 7: (2, 1) # Move down
+# 8: (2, 2) # Move down and right
 
 
 """
 This implementation of the Q-learning algorithm estimate the Q-values using the algorithm:
 
-Q_n+1(x, a) = (1 - alpha_n) * Q_n(x, a) + alpha_n * (r(x, a) + lambda * max_a(Q_n(y, a)))
+Q_n+1(x, a) = (1 - alpha_n) * Q_n(x, a) + alpha_n * (r(x, a) + lambda * max_b(Q_n(y, b)))
 """
 
 class Agent:

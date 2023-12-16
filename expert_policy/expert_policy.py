@@ -6,21 +6,24 @@ from rele_pack.expert_policy import expert_policy
 
 if __name__ == '__main__':
     params = {"number_of_actions": 10,
-              "grid_size": 5,
+              "grid_size": 10,
               "amount_of_eval_rounds": 100}
 
     env = chest_env(number_of_actions=params["number_of_actions"], grid_size=params["grid_size"], normalize=True,
                     return_distance=True, use_tensor=True)
     obs = env.reset()
 
-    print(env.player_position)
-    print(env.coin_position)
-    print(obs)
+    print("---- Start position ----")
+    print("Player pos:", env.player_position)
+    print("coin pos:", env.coin_position)
+    print("chest pos:", env.chest_position)
+    print()
 
     exp_pol = expert_policy()
 
     is_done = False
     frame_idx = 0
+    print("---- Expert actions ----")
 
     while not(is_done):
         frame_idx += 1
@@ -34,5 +37,6 @@ if __name__ == '__main__':
         print("coin pos:", env.coin_position)
         print("chest pos:", env.chest_position)
 
-        print(obs)
-        print(reward)
+        # print(obs)
+        print("reward:", reward)
+        print()

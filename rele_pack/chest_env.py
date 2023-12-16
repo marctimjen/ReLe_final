@@ -2,16 +2,16 @@ import gym
 import torch
 from gym import spaces
 
-# (right = 1 or left = -1, down = 1 or up = -1)
-# 0: (0, 0) # stand still
-# 1: (0, 1) # 1 down
-# 2: (1, 0) # 1 right
-# 3: (1, 1) # 1 right and 1 down
-# 4: (0, -1) # 1 up
-# 5: (-1, 0) # 1 left
-# 6: (-1, -1) # 1 left and 1 up
-# 7: (-1, 1) # 1 left and 1 down
-# 8: (1, -1) # 1 right and 1 up
+# (right = 2 or left = 0, down = 2 or up = 0)
+# 0: (0, 0) # Move up and left
+# 1: (0, 1) # Move up
+# 2: (1, 0) # Move left
+# 3: (1, 1) # stand still
+# 4: (0, 2) # Move up and right
+# 5: (2, 0) # Move down and left
+# 6: (1, 2) # Move right
+# 7: (2, 1) # Move down
+# 8: (2, 2) # Move down and right
 
 device = torch.device("cpu")  # "cuda:0" if torch.cuda.is_available() else
 fl = torch.cuda.FloatTensor
