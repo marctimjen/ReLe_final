@@ -1,4 +1,3 @@
-name: pyt
 channels:
   - anaconda
   - conda-forge
@@ -268,4 +267,3 @@ dependencies:
       - uri-template==1.2.0
       - visdom==0.2.4
       - webcolors==1.13
-prefix: /home/marc/anaconda3/envs/pyt

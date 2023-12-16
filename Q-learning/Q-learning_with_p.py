@@ -156,6 +156,6 @@ if __name__ == "__main__":
             run["agent/transits_size"].log(len(agent.transits))
             run["agent/values_size"].log(len(agent.q_values))
             run.stop()
-            breakpoint()
+            #breakpoint()
             print("Solved in %d iterations!" % iter_no)
             break

@@ -21,7 +21,7 @@ class chest_env(gym.Env):
         :param distance: Should be the distance between the player and the coin
         """
         super(chest_env, self).__init__()
-        self.normalize = normalize
+        self.normalize_bool = normalize
         self.return_distance = return_distance
         self.use_tensor = use_tensor
         self.grid_size = torch.tensor((grid_size, grid_size), dtype=torch.int, device=device)  # change this to set the size of the environment
@@ -48,7 +48,7 @@ class chest_env(gym.Env):
         return observation
 
     def return_observation(self):
-        if self.normalize:
+        if self.normalize_bool:
             self.player_return = self.normalize(self.player_position)
             self.coin_return = self.normalize(self.coin_position)
             self.chest_return = self.normalize(self.chest_position)
