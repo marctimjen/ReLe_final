@@ -5,6 +5,19 @@ import torch
 import neptune
 import os
 
+
+# (right = 2 or left = 0, down = 2 or up = 0)
+# 0: (0, 0) # Move up and left
+# 1: (0, 1) # Move up
+# 2: (1, 0) # Move left
+# 3: (1, 1) # stand still
+# 4: (0, 2) # Move up and right
+# 5: (2, 0) # Move down and left
+# 6: (1, 2) # Move right
+# 7: (2, 1) # Move down
+# 8: (2, 2) # Move down and right
+
+
 class Agent:
     def __init__(self, env):
         self.env = env

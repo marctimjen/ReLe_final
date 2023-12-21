@@ -2,3 +2,4 @@
 /.idea/
 .neptune/
 *.pyc
+*.dat

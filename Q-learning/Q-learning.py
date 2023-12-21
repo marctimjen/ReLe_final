@@ -127,7 +127,7 @@ if __name__ == "__main__":
         api_token=token,
     )
 
-    run["Algo"] = "Q-learning"
+
 
     params = {"number_of_actions": 20,
               "grid_size": 4,
