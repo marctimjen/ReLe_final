@@ -32,7 +32,6 @@ class chest_env(gym.Env):
         self.number_of_actions = torch.tensor((number_of_actions), dtype=torch.int, device=device)
         self.action_number = torch.tensor((0), dtype=torch.int, device=device)
 
-
     def reset(self):
         pl_x = torch.randint(0, self.grid_size[0], size=(1, 1), dtype=torch.int, device=device).flatten()
         pl_y = torch.randint(0, self.grid_size[1], size=(1, 1), dtype=torch.int, device=device).flatten()
@@ -168,7 +167,6 @@ class chest_env(gym.Env):
         :return: iterator
         """
 
-
         def it_states(grid_size, device=device, use_tensor=True):
             for x in range(grid_size[0]):
                 for y in range(grid_size[1]):
@@ -205,7 +203,24 @@ class chest_env(gym.Env):
         it = it_actions(device=device, use_tensor=self.use_tensor)
         return it
 
+    def reset_for_testing_agent(self, state):
+        """
+        This function receives the starting state of the game. Then start the game from there.
 
+        :param state: The start state of the game.
+        :return observation: The state of the game (start state).
+        """
+        pl_x, pl_y, x2, y2, x3, y3 = state
+        self.player_position = torch.concat((torch.tensor([pl_x]), torch.tensor([pl_y])))
+        # self.player_position = [0, 0]  # Start at the top-left corner
+        self.coin_position = torch.concat((torch.tensor([x2]), torch.tensor([y2])))
+        self.chest_position = torch.concat((torch.tensor([x3]), torch.tensor([y3])))
+
+        self.has_coin = torch.tensor((False), dtype=torch.bool, device=device)
+        self.action_number = 0
+
+        observation = self.return_observation()
+        return observation
 
 
 
