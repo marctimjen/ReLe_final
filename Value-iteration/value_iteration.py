@@ -4,6 +4,7 @@ from rele_pack.chest_env import chest_env
 import torch
 import neptune
 import os
+import time
 
 
 # (right = 2 or left = 0, down = 2 or up = 0)
@@ -19,12 +20,13 @@ import os
 
 
 class Agent:
-    def __init__(self, env):
+    def __init__(self, env, gamma: float):
         self.env = env
         self.state = self.env.reset()
         self.rewards = collections.defaultdict(float)
         self.transits = collections.defaultdict(collections.Counter)
         self.values = collections.defaultdict(float)  # future values of the states - the one's we discount back
+        self.gamma = gamma
 
     def play_n_random_steps(self, count):
         for _ in range(count):
@@ -44,7 +46,7 @@ class Agent:
         action_value = torch.tensor(0.0)
         for tgt_state, count in target_counts.items():  # eg. Counter({0: 12, 4: 3})
             reward = self.rewards[(state, action, tgt_state)]  # Hvad er reward for at være i denne state?
-            val = reward + GAMMA * self.values[tgt_state]  # val = r(x, a) + gamma * V^n(y)
+            val = reward + self.gamma * self.values[tgt_state]  # val = r(x, a) + gamma * V^n(y)
             action_value += (count / total) * val  # action_value =  p(y|x, a) * val
         return action_value  # sum_y action_value  => for the given state and action return r(x,a) + gamma * sum_y p(y|x, a) * V^n(y)
 
@@ -107,28 +109,22 @@ class Agent:
         return total_reward  # get the total reward of the play though.
 
 
-if __name__ == "__main__":
+def value_it_main(params: dict):
+
+    start = time.time()
     token = os.getenv('NEPTUNE_API_TOKEN')
     run = neptune.init_run(
         project="ReL/ReLe-final",
         api_token=token,
     )
 
-    params = {"number_of_actions": 20,
-              "grid_size": 3,
-              "gamma": 0.9,
-              "test_episodes": 20,
-              "amount_of_eval_rounds": 100}
-
     reward_eval_que = collections.deque(maxlen=params["amount_of_eval_rounds"])
 
-    GAMMA = params["gamma"]
-    TEST_EPISODES = params["test_episodes"]
-
+    run["algo"] = "Value_iteration"
     run["parameters"] = params
     test_env = chest_env(number_of_actions=params["number_of_actions"], grid_size=params["grid_size"], normalize=False,
                          return_distance=False, use_tensor=False)
-    agent = Agent(env=test_env)
+    agent = Agent(env=test_env, gamma=params["gamma"])
 
     iter_no = 0
     best_reward = 0.0
@@ -138,10 +134,10 @@ if __name__ == "__main__":
         agent.value_iteration()  # fill in the values table - the future payments
 
         reward = 0.0
-        for _ in range(TEST_EPISODES):  # test the policy now for TEST_EPISODES games
+        for _ in range(params["test_episodes"]):  # test the policy now for TEST_EPISODES games
             reward += agent.eval_play_game(test_env)
 
-        reward /= TEST_EPISODES  # get the average reward
+        reward /= params["test_episodes"]  # get the average reward
         reward_eval_que.append(reward)
         run["reward"].log(reward)
         # print("reward", reward, iter_no)
@@ -154,9 +150,24 @@ if __name__ == "__main__":
             run["agent/rewards_size"].log(len(agent.rewards))
             run["agent/transits_size"].log(len(agent.transits))
             run["agent/values_size"].log(len(agent.values))
-            run.stop()
-            breakpoint()
-            print("Solved in %d iterations!" % iter_no)
 
+            # breakpoint()
+            # print("Solved in %d iterations!" % iter_no)
             break
 
+    end = time.time()
+    total_time = end - start
+    run["time"] = total_time
+    run["iter_no"] = iter_no
+    run.stop()
+    return total_time, iter_no
+
+
+if __name__ == "__main__":
+    params = {"number_of_actions": 3,
+              "grid_size": 20,
+              "gamma": 0.9,
+              "test_episodes": 20,
+              "amount_of_eval_rounds": 100}
+
+    value_it_main(params=params)
