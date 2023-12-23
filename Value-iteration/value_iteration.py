@@ -1,3 +1,6 @@
+import sys
+sys.path.append('..')  # Add the parent directory to sys.path
+sys.path.append('../..')  # Add the parent directory to sys.path
 import gym
 import collections
 from rele_pack.chest_env import chest_env
