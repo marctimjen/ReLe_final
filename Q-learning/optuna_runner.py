@@ -37,7 +37,7 @@ optuna.delete_study(study_name="Q_learn_study", storage="sqlite:///example.db")
 study = optuna.create_study(storage="sqlite:///example.db", study_name="Q_learn_study", direction="minimize")
 n_amount = 20
 
-commands = [[py_path, "/home/tyson/ReLe_final/Q-learning/opt_test.py", "-r", str(run_id), "-g", args.grid, "-n",
+commands = [[py_path, "/home/tyson/ReLe_final/Q-learning/Q_learn_optuna.py", "-r", str(run_id), "-g", args.grid, "-n",
              args.act] for i in range(n_amount)]
 
 for command in commands:
