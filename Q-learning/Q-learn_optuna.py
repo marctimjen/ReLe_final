@@ -29,6 +29,8 @@ def objective(trial):
 
     run[f"trials/trials/{opt_id}/reward/time"].log(time)
     run[f"trials/trials/{opt_id}/reward/iter_no"].log(iter_no)
+    run["Algo"] = "Q_learning"
+    run["grid_size"] = params["grid_size"]
     return time
 
 
