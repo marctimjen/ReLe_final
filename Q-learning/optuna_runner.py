@@ -20,7 +20,7 @@ run = neptune.init_run(
 
 run["Algo"] = "Q_learning"
 run["grid_size"] = args.grid
-run["number_of_actions"] = args.grid
+run["number_of_actions"] = args.act
 run_id = run["sys/id"].fetch()
 
 params = {"number_of_actions": int(args.act),
