@@ -38,6 +38,6 @@ def objective(trial):
     run[f"trials/trials/{opt_id}/reward/iter_no"].log(iter_no)
     return time
 
-study = optuna.load_study(study_name="Q_learn_study", storage="sqlite:///example.db")
+study = optuna.load_study(study_name=f"Q_learn_study_grid_{args.grid}_act_{args.act}", storage="sqlite:///example.db")
 study.optimize(objective, n_trials=30, callbacks=[neptune_callback])
 run.stop()

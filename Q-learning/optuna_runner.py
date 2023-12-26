@@ -33,8 +33,9 @@ params = {"number_of_actions": int(args.act),
 
 run["parameters"] = params
 
-optuna.delete_study(study_name="Q_learn_study", storage="sqlite:///example.db")
-study = optuna.create_study(storage="sqlite:///example.db", study_name="Q_learn_study", direction="minimize")
+optuna.delete_study(study_name=f"Q_learn_study_grid_{args.grid}_act_{args.act}", storage="sqlite:///example.db")
+study = optuna.create_study(storage="sqlite:///example.db", study_name=f"Q_learn_study_grid_{args.grid}_act_{args.act}",
+                            direction="minimize")
 n_amount = 20
 
 commands = [[py_path, "/home/tyson/ReLe_final/Q-learning/Q_learn_optuna.py", "-r", str(run_id), "-g", args.grid, "-n",
