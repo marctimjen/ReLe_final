@@ -23,7 +23,7 @@ optuna.delete_study(study_name="Q_learn_study", storage="sqlite:///example.db")
 study = optuna.create_study(storage="sqlite:///example.db", study_name="Q_learn_study")
 n_amount = 3
 
-commands = [[py_path + f" /home/tyson/ReLe_final/Q-learning/opt_test.py -r run_id -i {i}"] for i in range(n_amount)]
+commands = [[py_path + f" /home/tyson/ReLe_final/Q-learning/opt_test.py -r {run_id} -i {i}"] for i in range(n_amount)]
 
 for command in commands:
     p = subprocess.Popen(command, stdout=subprocess.PIPE)
