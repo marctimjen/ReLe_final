@@ -1,7 +1,7 @@
 import optuna
 import dask.distributed
 from dask.distributed import Client
-from dask_optuna import OptunaScheduler
+import dask_optuna
 import neptune
 import neptune.integrations.optuna as optuna_utils
 import os
