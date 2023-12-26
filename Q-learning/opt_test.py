@@ -34,7 +34,7 @@ def objective(trial):
 
 neptune_callback = optuna_utils.NeptuneCallback(run)
 
-study = optuna.load_study(study_name="my_study", storage="sqlite:///example.db")
+study = optuna.load_study(study_name="Q_learn_study", storage="sqlite:///example.db")
 study.optimize(objective, n_trials=params["n_trials"], callbacks=[neptune_callback])
 
 run.stop()
