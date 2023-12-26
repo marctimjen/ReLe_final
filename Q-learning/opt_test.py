@@ -5,6 +5,7 @@ from dask_optuna import OptunaScheduler
 import neptune
 import neptune.integrations.optuna as optuna_utils
 import os
+import joblib
 
 token = os.getenv('NEPTUNE_API_TOKEN')
 run = neptune.init_run(
@@ -30,9 +31,13 @@ def objective(trial):
 
 neptune_callback = optuna_utils.NeptuneCallback(run)
 
-client = Client()
-scheduler = OptunaScheduler(client)
-study = optuna.create_study(direction=params["direction"], scheduler=scheduler)
-study.optimize(objective, n_trials=params["n_trials"], callbacks=[neptune_callback])
+with dask.distributed.Client() as client:
+   # Create a study using Dask-compatible storage
+   storage = dask_optuna.DaskStorage()
+   study = optuna.create_study(storage=storage, direction=params["direction"])
+   # Optimize in parallel on your Dask cluster
+   with joblib.parallel_backend("dask"):
+      study.optimize(objective, n_trials=params["n_trials"], callbacks=[neptune_callback], n_jobs=-1)
+   print(f"best_params = {study.best_params}")
 
 run.stop()
