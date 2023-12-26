@@ -6,10 +6,8 @@ import argparse
 
 parser = argparse.ArgumentParser(description='opt_test')
 parser.add_argument("-r", "--run", required=True, help="run id")
-parser.add_argument("-i", "--it", required=True, help="iteratio number")
 args = parser.parse_args()
 
-print("run number", args.it)
 
 token = os.getenv('NEPTUNE_API_TOKEN')
 run = neptune.init_run(
