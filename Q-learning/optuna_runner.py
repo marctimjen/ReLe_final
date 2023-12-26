@@ -19,6 +19,7 @@ run_id = run["sys/id"].fetch()
 params = {"direction": "minimize", "n_trials": 20}
 run["parameters"] = params
 
+optuna.delete_study(study_name="Q_learn_study", storage="sqlite:///example.db")
 study = optuna.create_study(storage="sqlite:///example.db", study_name="Q_learn_study")
 n_amount = 3
 
