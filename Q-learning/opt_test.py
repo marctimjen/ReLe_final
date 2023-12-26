@@ -18,7 +18,7 @@ def objective(trial):
     param = {
         "epochs": trial.suggest_int("epochs", 3, 10),
         "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-1, log=True),
-        "dropout": trial.suggest_uniform("dropout", 0.2, 0.8),
+        "dropout": trial.suggest_float("dropout", 0.2, 0.8),
     }
 
     loss = (param["dropout"] * param["learning_rate"]) ** param["epochs"]

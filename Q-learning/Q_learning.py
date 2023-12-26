@@ -237,7 +237,6 @@ def Q_learn_main(params: dict):
             run["agent/rewards_size"].log(len(agent.rewards))
             run["agent/transits_size"].log(len(agent.transits))
             run["agent/values_size"].log(len(agent.q_values))
-            run.stop()
             # breakpoint()
             print("Solved in %d iterations!" % iter_no)
             break

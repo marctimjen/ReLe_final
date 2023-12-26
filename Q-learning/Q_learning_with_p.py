@@ -7,6 +7,7 @@ from rele_pack.chest_env import chest_env
 import torch
 import neptune
 import os
+import time
 
 # (right = 2 or left = 0, down = 2 or up = 0)
 # 0: (0, 0) # Move up and left
@@ -107,8 +108,38 @@ class Agent:
             state = new_state
         return total_reward  # get the total reward of the play though.
 
+    def eval_play_game_all(self, env: gym.envs) -> float:
+        """
+        Function used to evaluate the given policy by playing all combinations of the games.
+
+        :param env (gym.envs): The environment to play the game in.
+        :return (float): The total reward of the play through.
+        """
+
+        gen_all_states = self.env.iter_all_states()  # get all the states
+        gen_all_states = iter(gen_all_states)
+
+        total_reward = 0.0
+        games = 0
+        for st in gen_all_states:  # for every state in the game
+            state = env.reset_for_testing_agent(state=st)  # reset with the current state
+            games += 1
+            while True:
+                action = self.select_action(state)  # select the best action - the one with best value
+                new_state, reward, is_done, _ = env.step(action)  # iterate in the game
+                self.rewards[(state, action, new_state)] = reward  # set reward in rewards table
+                self.transits[(state, action)][new_state] += 1  # append to transit table
+                total_reward += reward
+                if is_done:
+                    break
+                state = new_state
+
+        avg_reward = total_reward / games
+        return avg_reward
+
 
 def Q_learn_main_with_p(params: dict):
+    start = time.time()
     token = os.getenv('NEPTUNE_API_TOKEN')
     run = neptune.init_run(
         project="ReL/ReLe-final",
@@ -119,26 +150,26 @@ def Q_learn_main_with_p(params: dict):
 
     reward_eval_que = collections.deque(maxlen=params["amount_of_eval_rounds"])
 
-    gamma = params["gamma"]
-    TEST_EPISODES = params["test_episodes"]
-
     run["parameters"] = params
     test_env = chest_env(number_of_actions=params["number_of_actions"], grid_size=params["grid_size"], normalize=False,
                          return_distance=False, use_tensor=False)
-    agent = Agent(env=test_env)
+    agent = Agent(env=test_env, gamma=params["gamma"])
 
     iter_no = 0
     best_reward = 0.0
     while True:
         iter_no += 1
-        agent.play_n_random_steps(300)  # fill in the transit and rewards tables
+        agent.play_n_random_steps(6 ** params["grid_size"])  # fill in the transit and rewards tables
         agent.q_learn()  # fill in the values table - the future payments
 
         reward = 0.0
-        for _ in range(TEST_EPISODES):  # test the policy now for TEST_EPISODES games
-            reward += agent.eval_play_game(test_env)
+        if params["grid_size"] > 4:
+            for _ in range(params["test_episodes"]):  # test the policy now for TEST_EPISODES games
+                reward += agent.eval_play_game(test_env)
+            reward /= params["test_episodes"]  # get the average reward
+        else:
+            reward = agent.eval_play_game_all(test_env)
 
-        reward /= TEST_EPISODES  # get the average reward
         reward_eval_que.append(reward)
         run["reward"].log(reward)
         # print("reward", reward, iter_no)
@@ -151,10 +182,17 @@ def Q_learn_main_with_p(params: dict):
             run["agent/rewards_size"].log(len(agent.rewards))
             run["agent/transits_size"].log(len(agent.transits))
             run["agent/values_size"].log(len(agent.q_values))
-            run.stop()
             # breakpoint()
             print("Solved in %d iterations!" % iter_no)
             break
+
+    end = time.time()
+    total_time = end - start
+    run["time"] = total_time
+    run["iter_no"] = iter_no
+    run_id = run["sys/id"].fetch()
+    run.stop()
+    return total_time, iter_no, run_id
 
 
 if __name__ == "__main__":
@@ -164,4 +202,4 @@ if __name__ == "__main__":
               "test_episodes": 20,
               "amount_of_eval_rounds": 100}
 
-
+    Q_learn_main_with_p(params)
