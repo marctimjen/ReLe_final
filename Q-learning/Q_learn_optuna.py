@@ -26,9 +26,9 @@ def objective(trial):
 
     params = {"number_of_actions": int(args.act),
               "grid_size": int(args.grid),
-              "epsilon": 0.2,
+              "epsilon": trial.suggest_float("epsilon", 0.05, 0.5),
               "gamma": 0.9,
-              "decay": trial.suggest_float("gamma", 0.000000001, 0.05),
+              "decay": trial.suggest_float("decay", 0.000000001, 0.05),
               "test_episodes": 20,
               "amount_of_eval_rounds": 100}
 
