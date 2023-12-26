@@ -1,21 +1,24 @@
 import optuna
-import dask.distributed
-from dask.distributed import Client
-import dask_optuna
-import neptune
 import neptune.integrations.optuna as optuna_utils
+import neptune
 import os
-import joblib
+import argparse
+
+parser = argparse.ArgumentParser(description='opt_test')
+parser.add_argument("-r", "--run", required=True, help="run id")
+parser.add_argument("-i", "--it", required=True, help="iteratio number")
+args = parser.parse_args()
+
+print("run number", args.it)
 
 token = os.getenv('NEPTUNE_API_TOKEN')
 run = neptune.init_run(
     project="ReL/ReLe-opt",
-    api_token=token
+    api_token=token,
+    with_id=args.run
 )  # your credentials
 
 params = {"direction": "minimize", "n_trials": 20}
-run["parameters"] = params
-
 
 def objective(trial):
     param = {
@@ -31,13 +34,7 @@ def objective(trial):
 
 neptune_callback = optuna_utils.NeptuneCallback(run)
 
-with dask.distributed.Client() as client:
-   # Create a study using Dask-compatible storage
-   storage = dask_optuna.DaskStorage()
-   study = optuna.create_study(storage=storage, direction=params["direction"])
-   # Optimize in parallel on your Dask cluster
-   with joblib.parallel_backend("dask"):
-      study.optimize(objective, n_trials=params["n_trials"], callbacks=[neptune_callback], n_jobs=-1)
-   print(f"best_params = {study.best_params}")
+study = optuna.load_study(study_name="my_study", direction=params["direction"])
+study.optimize(objective, n_trials=params["n_trials"], callbacks=[neptune_callback])
 
 run.stop()
