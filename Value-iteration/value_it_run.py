@@ -10,8 +10,8 @@ if __name__ == "__main__":
               "amount_of_eval_rounds": 100}
 
     param_to_try = {(g, n): {"time": [], "it_number": [], "run_id": []} for g, n in
-                    zip([2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20],
-                        [5, 9, 12, 20, 30, 40, 45, 50, 60, 100, 120])}
+                    zip([2, 3, 4, 5, 6, 7, 8, 9, 10],
+                        [5, 9, 12, 20, 30, 40, 45, 50, 60])}
 
     for grid_size, number_of_actions in param_to_try:
         for _ in range(5):

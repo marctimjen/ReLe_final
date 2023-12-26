@@ -86,7 +86,7 @@ class Agent:
             state_values = [self.calc_action_value(state, action) for action in gen_all_actions]
             # iterate over all the possible actions:  r(x, a) + gamma * sum_y p(y|x, a) * V^n(y)
 
-            self.values[state] = max(state_values)  # tag en value som maksimere vores state_values
+            self.values[state] = max(state_values)
             # V^(n+1)(x) = max_a (r(x, a) + gamma * sum_y p(y|x, a)*V^n(y))
 
 
@@ -162,7 +162,7 @@ def value_it_main(params: dict):
     best_reward = 0.0
     while True:
         iter_no += 1
-        agent.play_n_random_steps(300)  # fill in the transit and rewards tables
+        agent.play_n_random_steps(6 ** params["grid_size"])  # fill in the transit and rewards tables
         agent.value_iteration()  # fill in the values table - the future payments
         reward = 0.0
         if params["grid_size"] > 4:
@@ -200,6 +200,6 @@ if __name__ == "__main__":
               "grid_size": 5,
               "gamma": 0.9,
               "test_episodes": 20,
-              "amount_of_eval_rounds": 100}
+              "amount_of_eval_rounds": 1000}
 
     value_it_main(params=params)

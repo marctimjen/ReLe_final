@@ -175,6 +175,9 @@ class chest_env(gym.Env):
                             for x3 in range(grid_size[0]):
                                 for y3 in range(grid_size[1]):
 
+                                    x, x2, x3 = float(x), float(x2), float(x3)
+                                    y, y2, y3 = float(y), float(y2), float(y3)
+
                                     if use_tensor:
                                         yield torch.tensor((x, y, x2, y2, x3, y3), dtype=torch.int, device=device)
                                     else:

@@ -25,17 +25,18 @@ import os
 This implementation of the Q-learning algorithm estimate the probabilites: p(y |x, a) directly.
 This means that the Q-update step looks alto more like the value iteration update with;
 
-Q = reward + lambda * sum_y max_a(Q(y, a)) * p(y|x, a)
+Q = reward + gamma * sum_y max_a(Q(y, a)) * p(y|x, a)
 """
 
 
 class Agent:
-    def __init__(self, env):
+    def __init__(self, env, gamma):
         self.env = env
         self.state = self.env.reset()
         self.rewards = collections.defaultdict(float)
         self.transits = collections.defaultdict(collections.Counter)
         self.q_values = collections.defaultdict(float)  # table with Q-values
+        self.gamma = gamma
 
     def play_n_random_steps(self, count):
         for _ in range(count):
@@ -81,9 +82,9 @@ class Agent:
                     key = (state, action, tgt_state)  # get key
                     reward = self.rewards[key]  # get rewards for going from state to tgt_state using action
                     best_action = self.select_action(tgt_state)  # select the best action to take
-                    val = reward + LAMBDA * self.q_values[(tgt_state, best_action)]  # val = r(x, a) + lambda * max_a(Q(Y_n+1, a))
+                    val = reward + self.gamma * self.q_values[(tgt_state, best_action)]  # val = r(x, a) + gamma * max_a(Q(Y_n+1, a))
                     action_value += (count / total) * val  # action_value = p(y|x, a) * val
-                self.q_values[(state, action)] = action_value  # update the values table using r(x, a) + lambda * sum_y p(y|x, a) * V^n(y)
+                self.q_values[(state, action)] = action_value  # update the values table using r(x, a) + gamma * sum_y p(y|x, a) * V^n(y)
 
     def eval_play_game(self, env: gym.envs) -> float:
         """
@@ -107,25 +108,18 @@ class Agent:
         return total_reward  # get the total reward of the play though.
 
 
-
-if __name__ == "__main__":
+def Q_learn_main_with_p(params: dict):
     token = os.getenv('NEPTUNE_API_TOKEN')
     run = neptune.init_run(
         project="ReL/ReLe-final",
         api_token=token,
     )
 
-    run["Algo"] = "Q-learning"
-
-    params = {"number_of_actions": 20,
-              "grid_size": 3,
-              "lambda": 0.9,
-              "test_episodes": 20,
-              "amount_of_eval_rounds": 100}
+    run["Algo"] = "Q-learning-with-p"
 
     reward_eval_que = collections.deque(maxlen=params["amount_of_eval_rounds"])
 
-    LAMBDA = params["lambda"]
+    gamma = params["gamma"]
     TEST_EPISODES = params["test_episodes"]
 
     run["parameters"] = params
@@ -158,6 +152,16 @@ if __name__ == "__main__":
             run["agent/transits_size"].log(len(agent.transits))
             run["agent/values_size"].log(len(agent.q_values))
             run.stop()
-            #breakpoint()
+            # breakpoint()
             print("Solved in %d iterations!" % iter_no)
             break
+
+
+if __name__ == "__main__":
+    params = {"number_of_actions": 20,
+              "grid_size": 3,
+              "gamma": 0.9,
+              "test_episodes": 20,
+              "amount_of_eval_rounds": 100}
+
+
