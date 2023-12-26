@@ -11,6 +11,9 @@ run = neptune.init_run(
     api_token=token,
 )
 
+run["Algo"] = "Q_learning"
+run["grid_size"] = "2"
+
 neptune_callback = optuna_utils.NeptuneCallback(run)
 
 
@@ -29,8 +32,6 @@ def objective(trial):
 
     run[f"trials/trials/{opt_id}/reward/time"].log(time)
     run[f"trials/trials/{opt_id}/reward/iter_no"].log(iter_no)
-    run["Algo"] = "Q_learning"
-    run["grid_size"] = params["grid_size"]
     return time
 
 

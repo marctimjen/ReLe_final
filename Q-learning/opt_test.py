@@ -1,5 +1,7 @@
 import optuna
-
+import dask.distributed
+from dask.distributed import Client
+from dask_optuna import OptunaScheduler
 import neptune
 import neptune.integrations.optuna as optuna_utils
 import os
@@ -28,7 +30,9 @@ def objective(trial):
 
 neptune_callback = optuna_utils.NeptuneCallback(run)
 
-study = optuna.create_study(direction=params["direction"])
+client = Client()
+scheduler = OptunaScheduler(client)
+study = optuna.create_study(direction=params["direction"], scheduler=scheduler)
 study.optimize(objective, n_trials=params["n_trials"], callbacks=[neptune_callback])
 
 run.stop()
