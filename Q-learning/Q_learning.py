@@ -7,6 +7,7 @@ from rele_pack.chest_env import chest_env
 import torch
 import neptune
 import os
+import time
 
 # 0: (0, 0) # Move up and left
 # 1: (0, 1) # Move up
@@ -148,8 +149,49 @@ class Agent:
         return avg_reward
 
 
+def Q_learn_opt(params: dict):
+    start = time.time()
+    reward_eval_que = collections.deque(maxlen=params["amount_of_eval_rounds"])
+    test_env = chest_env(number_of_actions=params["number_of_actions"], grid_size=params["grid_size"], normalize=False,
+                         return_distance=False, use_tensor=False)
+    agent = Agent(env=test_env, gamma=params["gamma"], decay=params["decay"])
+
+    iter_no = 0
+    best_reward = 0.0
+    while True:
+        iter_no += 1
+        agent.q_learn(nr_episodes=4 ** params["grid_size"], epsi=params["epsilon"])
+        # fill in the Q-table - the future payments
+
+        reward = 0.0
+        if params["grid_size"] > 4:
+            for _ in range(params["test_episodes"]):  # test the policy now for TEST_EPISODES games
+                reward += agent.eval_play_game(test_env)
+                reward /= params["test_episodes"]  # get the average reward
+        else:
+            reward = agent.eval_play_game_all(test_env)
+
+        reward_eval_que.append(reward)
+        # print("reward", reward, iter_no)
+        if reward > best_reward:
+            print("Best reward updated %.3f -> %.3f" % (best_reward, reward))
+            best_reward = reward
+
+        m_reward = torch.stack(list(reward_eval_que), dim=0).mean()
+        if m_reward > 0.9999:
+            print("Solved in %d iterations!" % iter_no)
+            break
+
+        if iter_no > (14 - params["grid_size"]) ** params["grid_size"]:
+            # the parameter setting could not solve the env.
+            break
+
+    end = time.time()
+    total_time = end - start
+    return total_time, iter_no
 
 def Q_learn_main(params: dict):
+    start = time.time()
     token = os.getenv('NEPTUNE_API_TOKEN')
     run = neptune.init_run(
         project="ReL/ReLe-final",
@@ -170,7 +212,8 @@ def Q_learn_main(params: dict):
     while True:
         iter_no += 1
         # agent.play_n_random_steps(300)  # fill in the transit and rewards tables
-        agent.q_learn(nr_episodes=30, epsi=params["epsilon"])  # fill in the values table - the future payments
+        agent.q_learn(nr_episodes=4 ** params["grid_size"], epsi=params["epsilon"])
+        # fill in the Q-table - the future payments
 
         run["alpha"].log(agent.alp)
 
@@ -199,6 +242,13 @@ def Q_learn_main(params: dict):
             print("Solved in %d iterations!" % iter_no)
             break
 
+    end = time.time()
+    total_time = end - start
+    run["time"] = total_time
+    run["iter_no"] = iter_no
+    run_id = run["sys/id"].fetch()
+    run.stop()
+    return total_time, iter_no, run_id
 
 if __name__ == "__main__":
 
