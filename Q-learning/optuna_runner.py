@@ -33,7 +33,10 @@ params = {"number_of_actions": int(args.act),
 
 run["parameters"] = params
 
-optuna.delete_study(study_name=f"Q_learn_study_grid_{args.grid}_act_{args.act}", storage="sqlite:///example.db")
+
+if f"Q_learn_study_grid_{args.grid}_act_{args.act}" in optuna.study.get_all_study_names("sqlite:///example.db"):
+    optuna.delete_study(study_name=f"Q_learn_study_grid_{args.grid}_act_{args.act}", storage="sqlite:///example.db")
+
 study = optuna.create_study(storage="sqlite:///example.db", study_name=f"Q_learn_study_grid_{args.grid}_act_{args.act}",
                             direction="minimize")
 n_amount = 20
