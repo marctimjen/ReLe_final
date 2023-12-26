@@ -28,7 +28,7 @@ def objective(trial):
               "grid_size": int(args.grid),
               "epsilon": trial.suggest_float("epsilon", 0.05, 0.5),
               "gamma": 0.9,
-              "decay": trial.suggest_float("decay", 0.000000001, 0.05),
+              "decay": trial.suggest_float("decay", 0.000000001, 0.1),
               "test_episodes": 20,
               "amount_of_eval_rounds": 100}
 
@@ -36,8 +36,8 @@ def objective(trial):
 
     run[f"trials/trials/{opt_id}/reward/time"].log(time)
     run[f"trials/trials/{opt_id}/reward/iter_no"].log(iter_no)
-    return time
+    return iter_no
 
 study = optuna.load_study(study_name=f"Q_learn_study_grid_{args.grid}_act_{args.act}", storage="sqlite:///example.db")
-study.optimize(objective, n_trials=30, callbacks=[neptune_callback])
+study.optimize(objective, n_trials=10, callbacks=[neptune_callback])
 run.stop()
