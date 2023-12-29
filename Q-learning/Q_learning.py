@@ -189,6 +189,7 @@ def Q_learn_opt(params: dict):
     total_time = end - start
     return total_time, iter_no
 
+
 def Q_learn_main(params: dict):
     start = time.time()
     token = os.getenv('NEPTUNE_API_TOKEN')
