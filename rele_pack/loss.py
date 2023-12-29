@@ -2,16 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 def calc_loss_double_dqn(batch, net, tgt_net, gamma, double=False):
     states_v, actions_v, rewards_v, done_mask, next_states_v = batch
-
-    # states_v = torch.cat(states).view(-1, 6)
-    # next_states_v = torch.cat(next_states).view(-1, 6)
-    # actions_v = torch.cat(actions)
-    # rewards_v = torch.cat(rewards)  # get the reward for the action "actions"
-    # done_mask = torch.cat(dones)
-
-    # actions_v = actions_v.unsqueeze(-1)
     state_action_vals = net(states_v).gather(1, actions_v)
     state_action_vals = state_action_vals.squeeze(-1)  # predicted Q-values from the main network
 
@@ -34,8 +27,7 @@ def calc_loss_double_dqn(batch, net, tgt_net, gamma, double=False):
     return nn.MSELoss()(state_action_vals, exp_sa_vals)
 
 
-
-def calc_loss_DQfD(buf_sample, net, tgt_net, gamma, double = False, run = None, nr_exp_samples: int=50000,
+def calc_loss_DQfD(buf_sample, net, tgt_net, gamma, double: bool = False, run = None, nr_exp_samples: int = 50000,
                    lambdas: dict = {"lambda_dq": 1, "lambda_n": 1, "lambda_je": 1, "lambda_l2": 0.0005},
                    device = torch.device("cpu")):
     """
@@ -43,7 +35,7 @@ def calc_loss_DQfD(buf_sample, net, tgt_net, gamma, double = False, run = None, 
     :param net: DQN.
     :param tgt_net: Target DQN.
     :param gamma: The gamma value.
-    :param double (bool): If true use double DQN loss else use basic DQN loss.
+    :param double: (bool) If true use double DQN loss else use basic DQN loss.
     :param run: Neptune run instance to upload loss.
     :param nr_exp_samples: The first nr_exp_samples are from the expert policy.
     :param lambdas: The different weights of the losses.

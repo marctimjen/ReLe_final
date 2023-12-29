@@ -1,24 +1,46 @@
 import collections
 import torch
-import numpy as np
 
 Experience = collections.namedtuple('Experience', field_names=['state', 'action', 'reward', 'done', 'new_state'])
 
-class ExperienceBuffer:  # to keep past actions
-    def __init__(self, capacity):
-        self.buffer = collections.deque(maxlen=capacity)  # set buffer and size of que
+
+class ExperienceBuffer:
+    def __init__(self, capacity, state_shape: int = 6, device = 'cuda:0'):
+        self.device = device
+        self.sample_index = 0
+        self.capacity = capacity
+
+        self.state = torch.zeros((capacity, state_shape), dtype=torch.float64, device=device)
+        self.next_state = torch.zeros((capacity, state_shape), dtype=torch.float64, device=device)
+
+        self.rewards = torch.zeros((capacity, 1), dtype=torch.float64, device=device)
+        self.actions = torch.zeros((capacity, 1), dtype=torch.int64, device=device)
+        self.dones = torch.zeros((capacity, 1), dtype=torch.bool, device=device)
+
+        self.size = 0
 
     def __len__(self):
-        return len(self.buffer)  # return length
+        return self.size
 
     def append(self, experience):
-        self.buffer.append(experience)  # append the experience to the end of the que
+        state, action, reward, done, new_state = experience
+
+        self.state[self.sample_index] = state
+        self.next_state[self.sample_index] = new_state
+        self.rewards[self.sample_index] = reward
+        self.actions[self.sample_index] = action
+        self.dones[self.sample_index] = done
+
+        # Update the index and size, and wrap around if necessary
+        self.sample_index = (self.sample_index + 1) % self.capacity
+        self.size = min(self.size + 1, self.capacity)
 
     def sample(self, batch_size):
-        indices = np.random.choice(len(self.buffer), batch_size, replace=False)  # select random batches...
-        states, actions, rewards, dones, next_states = zip(*[self.buffer[idx] for idx in indices])
+        # Select random indices for the batch
+        indices = torch.randint(0, self.size, (batch_size,), dtype=torch.long, device=self.device)
 
-        return states, actions, rewards, dones, next_states
+        return (self.state[indices], self.actions[indices], self.rewards[indices], self.dones[indices],
+                self.next_state[indices])
 
 
 class DQFD_experience_buffer:

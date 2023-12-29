@@ -72,8 +72,7 @@ class Agent:
 
     def q_learn(self, nr_episodes: int, epsi: float):
         """
-        Here we iterate over all states and actions and calculate the max state value. With this we can fill the values
-        table.
+        Here we run the Q-learning algorithm
 
         :return: None
         """

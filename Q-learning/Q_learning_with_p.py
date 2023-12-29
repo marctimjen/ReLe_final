@@ -85,7 +85,7 @@ class Agent:
                     best_action = self.select_action(tgt_state)  # select the best action to take
                     val = reward + self.gamma * self.q_values[(tgt_state, best_action)]  # val = r(x, a) + gamma * max_a(Q(Y_n+1, a))
                     action_value += (count / total) * val  # action_value = p(y|x, a) * val
-                self.q_values[(state, action)] = action_value  # update the values table using r(x, a) + gamma * sum_y p(y|x, a) * V^n(y)
+                self.q_values[(state, action)] = action_value  # update the Q-values table using r(x, a) + gamma * sum_y p(y|x, a) * max_b(Q^n(y, b))
 
     def eval_play_game(self, env: gym.envs) -> float:
         """
@@ -196,7 +196,7 @@ def Q_learn_main_with_p(params: dict):
 
 
 if __name__ == "__main__":
-    params = {"number_of_actions": 20,
+    params = {"number_of_actions": 9,
               "grid_size": 3,
               "gamma": 0.9,
               "test_episodes": 20,

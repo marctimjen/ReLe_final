@@ -1,12 +1,4 @@
-# This file is created to make a small environment to test the models in.
-
-# What I want to test firstly is creating a small environment that the player can learn to collect gold in.
-
-# Idea 1: follow a A* path finding algo - to get the fastest to the coins.
-# Idea 2: Lets make a small gym enviroment setup to learn the robots simply to collect gold.
-
 import numpy as np
-
 import sys
 sys.path.append('..')  # Add the parent directory to sys.path
 sys.path.append('../..')  # Add the parent directory to sys.path
@@ -20,64 +12,12 @@ from rele_pack.net import DQN
 from rele_pack.model_dir import model_dir, model_saver, model_path_loader, model_loader
 from rele_pack.chest_env import chest_env
 from rele_pack.loss import calc_loss_double_dqn
+from rele_pack.replay_buffer import ExperienceBuffer
 import neptune
 import os
 
 Experience = collections.namedtuple('Experience', field_names=['state', 'action', 'reward', 'done', 'new_state'])
-# class ExperienceBuffer:  # to keep past actions
-#     def __init__(self, capacity):
-#         self.buffer = collections.deque(maxlen=capacity)  # set buffer and size of que
-#
-#     def __len__(self):
-#         return len(self.buffer)  # return lenght
-#
-#     def append(self, experience):
-#         self.buffer.append(experience)  # append the experience to the end of the que
-#
-#     def sample(self, batch_size):
-#         indices = np.random.choice(len(self.buffer), batch_size, replace=False)  # select random batches...
-#         states, actions, rewards, dones, next_states = zip(*[self.buffer[idx] for idx in indices])
-#
-#         return (states, actions, rewards, dones, next_states)  # get control over the states retuned!
 
-
-class ExperienceBuffer:
-    def __init__(self, capacity, state_shape: int = 6, device = 'cuda:0'):
-        self.device = device
-        self.sample_index = 0
-        self.capacity = capacity
-
-        self.state = torch.zeros((capacity, state_shape), dtype=torch.float64, device=device)
-        self.next_state = torch.zeros((capacity, state_shape), dtype=torch.float64, device=device)
-
-        self.rewards = torch.zeros((capacity, 1), dtype=torch.float64, device=device)
-        self.actions = torch.zeros((capacity, 1), dtype=torch.int64, device=device)
-        self.dones = torch.zeros((capacity, 1), dtype=torch.bool, device=device)
-
-        self.size = 0
-
-    def __len__(self):
-        return self.size
-
-    def append(self, experience):
-        state, action, reward, done, new_state = experience
-
-        self.state[self.sample_index] = state
-        self.next_state[self.sample_index] = new_state
-        self.rewards[self.sample_index] = reward
-        self.actions[self.sample_index] = action
-        self.dones[self.sample_index] = done
-
-        # Update the index and size, and wrap around if necessary
-        self.sample_index = (self.sample_index + 1) % self.capacity
-        self.size = min(self.size + 1, self.capacity)
-
-    def sample(self, batch_size):
-        # Select random indices for the batch
-        indices = torch.randint(0, self.size, (batch_size,), dtype=torch.long, device=self.device)
-
-        return (self.state[indices], self.actions[indices], self.rewards[indices], self.dones[indices],
-                self.next_state[indices])
 
 class Agent:
     def __init__(self, env, exp_buffer, device="cpu"):
@@ -100,9 +40,7 @@ class Agent:
         if np.random.random() < epsilon:  # network action or random action
             action = env.sample()  # make random action
         else:
-            # state_a = np.array([self.state], copy=False)  # get state
-            # state_v = torch.tensor(state_a).to(device)
-            q_vals_v = net(self.state)[0]  # give state to "normal" network
+            q_vals_v = net(self.state)[0]  # give state to "main" network
             _, act_v = torch.max(q_vals_v, dim=0)
             action = hot_to_action(act_v, device)  # get the action that is best based on network
 
@@ -117,6 +55,7 @@ class Agent:
             self._reset()
         return done_reward  # return the reward when game is done else None
 
+
 if __name__ == '__main__':
     token = os.getenv('NEPTUNE_API_TOKEN')
     run = neptune.init_run(
@@ -127,7 +66,7 @@ if __name__ == '__main__':
     run["Algo"] = "Deep_Q-learning"
 
     params = {"number_of_actions": 10,
-              "grid_size": 5,
+              "grid_size": 3,
               "gamma": 0.99,
               "batch_size": 32,
               "replay_size": 2000000,
@@ -201,7 +140,7 @@ if __name__ == '__main__':
                     print(f"Best reward updated {best_m_reward} -> {m_reward}")
                 best_m_reward = m_reward  # Set the best reward as the last 100
 
-            if torch.sum(total_rewards[-params["amount_of_eval_rounds"]:]) >= params["amount_of_eval_rounds"] - 0.1:
+            if torch.sum(total_rewards[-params["amount_of_eval_rounds"]:]) >= params["amount_of_eval_rounds"] - 0.01:
                 # how many games do we need to play to beat the game (we need to win 19).
                 print(f"Solved in {frame_idx} frames!")
                 model_saver(model=net, save_path=save_path, game_idx=game_nr.item(), reward=m_reward.item(), final=True)
@@ -216,7 +155,6 @@ if __name__ == '__main__':
 
         optimizer.zero_grad()
         batch = buffer.sample(params["batch_size"])  # sample BATCH_SIZE=32 samples from the buffer (randomly)
-                                           # Sampling only takes 4x frames randomly from the game-play
-        loss_t = calc_loss_double_dqn(batch, net, tgt_net, gamma=params["gamma"], double=True)
+        loss_t = calc_loss_double_dqn(batch, net, tgt_net, gamma=params["gamma"], double=False)
         loss_t.backward()
         optimizer.step()
