@@ -74,7 +74,7 @@ def objective(trial):
               "epsilon_decay_last_frame": epsilon_decay,
               "epsilon_start": 0.99,
               "epsilon_final": 0.000001,
-              "amount_of_eval_rounds": 20 * 450,
+              "amount_of_eval_rounds": 450,
               }
 
     time, iter_no, run_id = deep_q_main(params)
