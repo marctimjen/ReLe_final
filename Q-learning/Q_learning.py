@@ -166,7 +166,7 @@ def Q_learn_opt(params: dict):
         if params["grid_size"] > 4:
             for _ in range(params["test_episodes"]):  # test the policy now for TEST_EPISODES games
                 reward += agent.eval_play_game(test_env)
-                reward /= params["test_episodes"]  # get the average reward
+            reward /= params["test_episodes"]  # get the average reward
         else:
             reward = agent.eval_play_game_all(test_env)
 
@@ -221,7 +221,7 @@ def Q_learn_main(params: dict):
         if params["grid_size"] > 4:
             for _ in range(params["test_episodes"]):  # test the policy now for TEST_EPISODES games
                 reward += agent.eval_play_game(test_env)
-                reward /= params["test_episodes"]  # get the average reward
+            reward /= params["test_episodes"]  # get the average reward
         else:
             reward = agent.eval_play_game_all(test_env)
 
@@ -252,10 +252,10 @@ def Q_learn_main(params: dict):
 if __name__ == "__main__":
 
     params = {"number_of_actions": 20,
-              "grid_size": 3,
-              "epsilon": 0.2,
+              "grid_size": 5,
+              "epsilon": 0.5,
               "gamma": 0.9,
-              "decay": 0.01,
+              "decay": 0.06,
               "test_episodes": 20,
               "amount_of_eval_rounds": 100}
 
