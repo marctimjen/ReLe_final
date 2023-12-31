@@ -37,7 +37,7 @@ if __name__ == "__main__":
             with_id="REL1-6",
         )
 
-        # run["algo"] = "Q_learn_with_p"
+        # run["algo"] = "Q_learn"
 
         param_to_try[(grid_size, number_of_actions)]["time"]\
             .append(np.mean(param_to_try[(grid_size, number_of_actions)]["time"]))
