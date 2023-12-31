@@ -226,7 +226,5 @@ class chest_env(gym.Env):
         return observation
 
 
-
-
 if __name__ == '__main__':
     gym.register(id='chest_env-v0', entry_point='chest_env:chest_env')

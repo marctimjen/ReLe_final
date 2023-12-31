@@ -219,15 +219,15 @@ def deep_q_main(params: dict):
     return total_time, frame_idx, run_id
 
 if __name__ == '__main__':
-    params = {"number_of_actions": 10,
-              "grid_size": 2,
+    params = {"number_of_actions": 60,
+              "grid_size": 20,
               "gamma": 0.99,
-              "batch_size": 32,
-              "replay_size": 2000000,
-              "lr": 1e-4,
-              "sync_target_frames": 10000,
-              "replay_start_size": 50000,
-              "epsilon_decay_last_frame": 500000,
+              "batch_size": 64,
+              "replay_size": 3500000,
+              "lr": 0.0001,
+              "sync_target_frames": 50000,
+              "replay_start_size": 70000,
+              "epsilon_decay_last_frame": 5_000_000,
               "epsilon_start": 0.99,
               "epsilon_final": 0.000001,
               "amount_of_eval_rounds": 450,  # how many games to ace in a row.
