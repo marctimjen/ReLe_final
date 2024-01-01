@@ -10,7 +10,7 @@ import os
 import time
 
 
-# (right = 2 or left = 0, down = 2 or up = 0)
+# (down = 2 or up = 0, right = 2 or left = 0)
 # 0: (0, 0) # Move up and left
 # 1: (0, 1) # Move up
 # 2: (1, 0) # Move left
@@ -196,10 +196,10 @@ def value_it_main(params: dict):
 
 
 if __name__ == "__main__":
-    params = {"number_of_actions": 25,
-              "grid_size": 5,
+    params = {"number_of_actions": 9,
+              "grid_size": 3,
               "gamma": 0.9,
               "test_episodes": 20,
-              "amount_of_eval_rounds": 1000}
+              "amount_of_eval_rounds": 100}
 
     value_it_main(params=params)

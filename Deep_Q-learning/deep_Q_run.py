@@ -29,12 +29,11 @@ if __name__ == "__main__":
                 params_to_try = params_to_try | {"sync_target_frames": 10000, "epsilon_decay_last_frame": 250000}
             elif grid_size == 4:
                 params_to_try = params_to_try | {"sync_target_frames": 40000, "epsilon_decay_last_frame": 500000}
-            elif grid_size == 5:
-                params_to_try = params_to_try | {"sync_target_frames": 0, "epsilon_decay_last_frame": 0}
             else:
-                params_to_try = params_to_try | {"sync_target_frames": 40000,
-                                                 "epsilon_decay_last_frame": 20000 * (2 ** grid_size)}
-
+                params_to_try = params_to_try | {"sync_target_frames": 50000,
+                                                 "epsilon_decay_last_frame": 250000 * grid_size,
+                                                 "replay_size": 3500000,
+                                                 "replay_start_size": 70000}
 
             t, it_no, run_id = deep_q_main(params_to_try)
             param_to_try[(grid_size, number_of_actions)]["time"].append(t)

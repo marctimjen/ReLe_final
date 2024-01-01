@@ -5,7 +5,7 @@ from rele_pack.chest_env import chest_env
 from rele_pack.expert_policy import expert_policy
 
 
-# (right = 2 or left = 0, down = 2 or up = 0)
+# (down = 2 or up = 0, right = 2 or left = 0)
 # 0: (0, 0) # Move up and left
 # 1: (0, 1) # Move up
 # 2: (1, 0) # Move left
