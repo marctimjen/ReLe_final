@@ -44,21 +44,21 @@ if __name__ == "__main__":
         run = neptune.init_run(
             project="ReL/ReLe-final-results",
             api_token=token,
-            with_id="REL1-4",
+            with_id="REL1-7",
         )
 
-        # run["algo"] = "Value_iteration"
+        # run["algo"] = "Deep_Q_learning"
 
         param_to_try[(grid_size, number_of_actions)]["time"]\
             .append(np.mean(param_to_try[(grid_size, number_of_actions)]["time"]))
         param_to_try[(grid_size, number_of_actions)]["it_number"]\
             .append(np.mean(param_to_try[(grid_size, number_of_actions)]["it_number"]))
 
-        run[f"time/time_value_grid_{grid_size}_nac_{number_of_actions}"]\
+        run[f"time/time_deep_grid_{grid_size}_nac_{number_of_actions}"]\
             = str(param_to_try[(grid_size, number_of_actions)]["time"])
-        run[f"it_number/it_no_value_grid_{grid_size}_nac_{number_of_actions}"]\
+        run[f"it_number/it_no_deep_grid_{grid_size}_nac_{number_of_actions}"]\
             = str(param_to_try[(grid_size, number_of_actions)]["it_number"])
-        run[f"run_id/run_value_grid_{grid_size}_nac_{number_of_actions}"]\
+        run[f"run_id/run_deep_grid_{grid_size}_nac_{number_of_actions}"]\
             = str(param_to_try[(grid_size, number_of_actions)]["run_id"])
 
         run.stop()
