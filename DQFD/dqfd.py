@@ -33,7 +33,7 @@ class Agent:
         This functions resets the env and sets the reward to 0.
         """
         self.exp_buffer.clear_at_end_of_episode()
-        self.state = env.reset()
+        self.state = self.env.reset()
         self.total_reward = torch.tensor((0), dtype=torch.float32, device=self.device)
 
     @torch.no_grad()  # we dont wan't to use gradients in out target network
@@ -41,7 +41,7 @@ class Agent:
         done_reward = None
 
         if np.random.random() < epsilon:  # network action or random action
-            action = env.sample()  # make random action
+            action = self.env.sample()  # make random action
         else:
             q_vals_v = net(self.state)[0]  # give state to "normal" network
             _, act_v = torch.max(q_vals_v, dim=0)
@@ -59,7 +59,8 @@ class Agent:
         return done_reward  # return the reward when game is done else None
 
 
-if __name__ == '__main__':
+def dqfd_main(params: dict):
+    start = time.time()
     token = os.getenv('NEPTUNE_API_TOKEN')
     run = neptune.init_run(
         project="ReL/ReLe-final",
@@ -67,51 +68,11 @@ if __name__ == '__main__':
     )
 
     run["Algo"] = "DQFD"
-
-    lambda_loss = {"lambda_dq": 1, "lambda_n": 1, "lambda_je": 1, "lambda_l2": 0.0005}
-
-    params = {"number_of_actions": 256,
-              "grid_size": 128,
-              "gamma": 0.99,
-              "batch_size": 32,
-              "replay_size": 200000,
-              "lr": 1e-4,
-              "sync_target_frames": 10000,
-              "replay_start_size": 50000,
-              "epsilon_decay_last_frame": 500000,
-              "epsilon_start": 0.99,
-              "epsilon_final": 0.000001,
-              "beta_frames": 10000000,
-              "beta_start": 0.4,
-              "expert_play": 50000,  # The amount of expert frames!
-              "pre_train_phase": 10000,
-              "lambda_loss": lambda_loss,  # the weights for the different loss-functions
-              "amount_of_eval_rounds": 450,  # how many games to ace in a row.
-              }
-
     run["parameters"] = params
 
     device = torch.device("cpu")  # torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_directory = os.path.abspath(os.path.dirname(__file__))
     save_path = model_dir(script_directory)
-
-    # GAMMA = 0.99
-    # BATCH_SIZE = 32
-    # REPLAY_SIZE = 200000
-    # LEARNING_RATE = 1e-4
-    # SYNC_TARGET_FRAMES = 10000
-    # REPLAY_START_SIZE = 50000
-
-    # EPSILON_DECAY_LAST_FRAME = 500000
-    # EPSILON_START = 0.7
-    # EPSILON_FINAL = 0.000001
-    # CONFIRMATION = 450  # win 100 games in a row
-
-    # BETA_FRAMES = 10000000  # set beta = 1 after this many frames
-    # BETA_START = 0.4
-
-    # EXPERT_PLAY = 50000  # The amount of expert frames!
-    # PRE_TRAIN_PHASE = 10000  # For how many iterations should the expert play before the agent starts to play?
 
     CLIP_GRAD = 1.0  # Clip the gradient to this value
 
@@ -169,11 +130,17 @@ if __name__ == '__main__':
                 ts_frame = frame_idx.clone()
                 ts = time.time()
                 m_reward = torch.mean(total_rewards[-100:])  # reward of last 100 rewards
+                run["game_nr"].log(game_nr)
                 run["reward/mean_reward"].log(m_reward)
                 run["reward/epsilon"].log(epsilon)
+                run["reward/beta"].log(buffer.beta)
+
+                if speed == torch.tensor(float("inf")):  # this is not logable:
+                    speed = torch.tensor(1000000)
+
                 run["reward/speed"].log(speed)
-                print(f"{frame_idx}: done {game_nr} games, reward {m_reward}," \
-                        + f" eps {epsilon}, speed {speed} f/s")
+                # print(f"{frame_idx}: done {game_nr} games, reward {m_reward}," \
+                #         + f" eps {epsilon}, speed {speed} f/s")
 
                 if best_m_reward is None or best_m_reward < m_reward:
                     model_saver(model=net, save_path=save_path, game_idx=game_nr.item(), reward=m_reward.item())
@@ -207,4 +174,54 @@ if __name__ == '__main__':
         nn_utils.clip_grad_norm_(net.parameters(), CLIP_GRAD)
         optimizer.step()
 
+    end = time.time()
+    total_time = end - start
+    run["time"] = total_time
+    run["iter_no"] = frame_idx
+    run_id = run["sys/id"].fetch()
     run.stop()
+    return total_time, frame_idx, run_id
+
+
+if __name__ == "__main__":
+    lambda_loss = {"lambda_dq": 1, "lambda_n": 1, "lambda_je": 1, "lambda_l2": 0.0005}
+
+    # params = {"number_of_actions": 256,
+    #           "grid_size": 128,
+    #           "gamma": 0.99,
+    #           "batch_size": 32,
+    #           "replay_size": 200000,
+    #           "lr": 1e-4,
+    #           "sync_target_frames": 10000,
+    #           "replay_start_size": 50000,
+    #           "epsilon_decay_last_frame": 500000,
+    #           "epsilon_start": 0.99,
+    #           "epsilon_final": 0.000001,
+    #           "beta_frames": 10000000,
+    #           "beta_start": 0.4,
+    #           "expert_play": 50000,  # The amount of expert frames!
+    #           "pre_train_phase": 10000,
+    #           "lambda_loss": lambda_loss,  # the weights for the different loss-functions
+    #           "amount_of_eval_rounds": 450,  # how many games to ace in a row.
+    #           }
+
+    params = {"number_of_actions": 5,
+              "grid_size": 2,
+              "gamma": 0.99,
+              "batch_size": 32,
+              "replay_size": 200000,
+              "lr": 1e-4,
+              "sync_target_frames": 20000,
+              "replay_start_size": 50000,
+              "epsilon_decay_last_frame": 10000,
+              "epsilon_start": 0.99,
+              "epsilon_final": 0.000001,
+              "beta_frames": 10000,
+              "beta_start": 0.4,
+              "expert_play": 5000,  # The amount of expert frames!
+              "pre_train_phase": 1000,
+              "lambda_loss": lambda_loss,  # the weights for the different loss-functions
+              "amount_of_eval_rounds": 450,  # how many games to ace in a row.
+              }
+
+    dqfd_main(params)
