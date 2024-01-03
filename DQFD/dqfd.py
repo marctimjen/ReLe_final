@@ -69,7 +69,7 @@ def dqfd_main(params: dict):
 
     run["Algo"] = "DQFD"
     run["parameters"] = params
-
+    lambda_loss = params["lambda_loss"]
     device = torch.device("cpu")  # torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_directory = os.path.abspath(os.path.dirname(__file__))
     save_path = model_dir(script_directory)
