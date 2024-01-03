@@ -15,8 +15,7 @@ args = parser.parse_args()
 token = os.getenv('NEPTUNE_API_TOKEN')
 run = neptune.init_run(
     project="ReL/ReLe-opt",
-    api_token=token,
-    with_id=args.run
+    api_token=token
 )  # your credentials
 
 run["Algo"] = "DQfD"
