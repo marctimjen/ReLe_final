@@ -5,7 +5,7 @@ import neptune
 import os
 import optuna
 import argparse
-from dqfd import dqfd_main
+from dqfd import dqfd_opt
 
 parser = argparse.ArgumentParser(description='dqfd optimization')
 parser.add_argument("-g", "--grid", required=True, help="grid-size")
@@ -92,7 +92,7 @@ def objective(trial):
               "amount_of_eval_rounds": 450,  # how many games to ace in a row.
               }
 
-    time_t, iter_no, _ = dqfd_main(params)
+    time_t, iter_no, _ = dqfd_opt(params)
 
     run[f"trials/trials/{opt_id}/reward/time"].log(time_t)
     run[f"trials/trials/{opt_id}/reward/iter_no"].log(iter_no)
