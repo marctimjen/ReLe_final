@@ -312,7 +312,7 @@ def dqfd_opt(params: dict):
 
 
 if __name__ == "__main__":
-    lambda_loss = {"lambda_dq": 1, "lambda_n": 1, "lambda_je": 1, "lambda_l2": 0.0005}
+    lambda_loss = {"lambda_dq": 1, "lambda_n": 1, "lambda_je": 1, "lambda_l2": 0.001}
 
     # params = {"number_of_actions": 256,
     #           "grid_size": 128,
@@ -333,21 +333,21 @@ if __name__ == "__main__":
     #           "amount_of_eval_rounds": 450,  # how many games to ace in a row.
     #           }
 
-    params = {"number_of_actions": 5,
-              "grid_size": 2,
+    params = {"number_of_actions": 12,
+              "grid_size": 4,
               "gamma": 0.99,
               "batch_size": 32,
               "replay_size": 200000,
               "lr": 1e-4,
-              "sync_target_frames": 20000,
-              "replay_start_size": 50000,
-              "epsilon_decay_last_frame": 10000,
+              "sync_target_frames": 40000,
+              "replay_start_size": 60000,
+              "epsilon_decay_last_frame": 40000,
               "epsilon_start": 0.99,
               "epsilon_final": 0.000001,
-              "beta_frames": 10000,
+              "beta_frames": 50000,
               "beta_start": 0.4,
-              "expert_play": 5000,  # The amount of expert frames!
-              "pre_train_phase": 1000,
+              "expert_play": 10000,  # The amount of expert frames!
+              "pre_train_phase": 10000,
               "lambda_loss": lambda_loss,  # the weights for the different loss-functions
               "amount_of_eval_rounds": 450,  # how many games to ace in a row.
               }
